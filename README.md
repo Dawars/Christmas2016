@@ -1,14 +1,16 @@
-Android Things empty project template
-=====================================
+Christmas 2016
+==============
 
-Use this empty project as a template for your Android Things project.
+A Christmas project inspired by http://ipv6tree.bitnet.be/
 
+The goal was to get to know with Android Things and put together something simple but fun and interactive.
 
 Pre-requisites
 --------------
 
 - Android Things compatible board
 - Android Studio 2.2+
+- LEDs
 
 
 Build and install
@@ -20,7 +22,7 @@ If you prefer to run on the command line, type
 
 ```bash
 ./gradlew installDebug
-adb shell am start com.example.androidthings.myproject/.MainActivity
+adb shell am start me.dawars.christmas2016/.MainActivity
 ```
 
 License

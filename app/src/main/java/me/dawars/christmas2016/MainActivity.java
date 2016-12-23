@@ -17,6 +17,11 @@
 package me.dawars.christmas2016;
 
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -24,9 +29,6 @@ import com.google.android.things.pio.Gpio;
 import com.google.android.things.pio.PeripheralManagerService;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
 import java.util.List;
 
 /**
@@ -56,7 +58,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
 
-
         PeripheralManagerService manager = new PeripheralManagerService();
         List<String> portList = manager.getGpioList();
         if (portList.isEmpty()) {
@@ -74,48 +75,14 @@ public class MainActivity extends Activity {
         try {
             mLedGpio = manager.openGpio("BCM6");
             mLedGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
-//            mLedGpio.setValue(true);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        try {
-            receivePacket();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        NetworkThread thread = new NetworkThread(manager, mLedGpio);
+        thread.start();
     }
 
-    private void receivePacket() throws IOException {
-        DatagramSocket socket = null;
-        socket = new DatagramSocket(1234);
-
-
-        byte[] buf = new byte[1000];
-        DatagramPacket dp = new DatagramPacket(buf, buf.length);
-        while (true) {
-            Log.v("socket", "Receiving packet");
-            socket.receive(dp);
-            String rcvd = new String(dp.getData(), 0, dp.getLength()) + ", from address: "
-                    + dp.getAddress() + ", port: " + dp.getPort();
-            Log.i("Packet received", rcvd);
-
-            String data = new String(dp.getData(), 0, dp.getLength());
-            switch (data) {
-                case "OFF":
-                    mLedGpio.setValue(false);
-                    Log.v("command", "turning off");
-
-                    break;
-                case "ON":
-                    mLedGpio.setValue(true);
-                    Log.v("command", "turning on");
-                    break;
-            }
-            Log.v("LED STATE", mLedGpio.getValue() + "");
-
-        }
-    }
 
     @Override
     protected void onDestroy() {
