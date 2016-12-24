@@ -14,10 +14,12 @@ import java.net.DatagramSocket;
  */
 
 public class NetworkThread extends Thread {
-    private final Gpio mLedGpio;
+    private static final String TAG = NetworkThread.class.getSimpleName();
+
+    private final Gpio[] mLedGpio;
     private final PeripheralManagerService manager;
 
-    public NetworkThread(PeripheralManagerService manager, Gpio mLedGpio) {
+    public NetworkThread(PeripheralManagerService manager, Gpio[] mLedGpio) {
         this.manager = manager;
         this.mLedGpio = mLedGpio;
     }
@@ -30,7 +32,6 @@ public class NetworkThread extends Thread {
             e.printStackTrace();
         }
     }
-
 
     private void receivePacket() throws IOException {
         DatagramSocket socket = null;
@@ -46,17 +47,25 @@ public class NetworkThread extends Thread {
                     + dp.getAddress() + ", port: " + dp.getPort();
             Log.i("Packet received", rcvd);
 
-            String data = new String(dp.getData(), 0, dp.getLength());
-            switch (data) {
-                case "OFF":
-                    mLedGpio.setValue(false);
-                    break;
-                case "ON":
-                    mLedGpio.setValue(true);
-                    break;
-            }
-            Log.v("LED STATE", mLedGpio.getValue() + "");
 
+            String[] data = new String(dp.getData(), 0, dp.getLength()).split(" ");
+            if (data.length > 1) {
+                int num = Integer.valueOf(data[1]);
+                if (num >= 0 && num < mLedGpio.length) {
+                    switch (data[0].toLowerCase()) {
+                        case "off":
+                            mLedGpio[num].setValue(false);
+                            Log.i(TAG, "Turning LED" + num + " Off");
+                            Log.i(TAG, mLedGpio[num].getValue() ? "ON" : "OFF");
+                            break;
+                        case "on":
+                            mLedGpio[num].setValue(true);
+                            Log.i(TAG, "Turning LED" + num + " On");
+                            Log.i(TAG, mLedGpio[num].getValue() ? "ON" : "OFF");
+                            break;
+                    }
+                }
+            }
         }
     }
 }

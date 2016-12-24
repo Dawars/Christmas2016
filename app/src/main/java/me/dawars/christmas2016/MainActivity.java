@@ -17,11 +17,6 @@
 package me.dawars.christmas2016;
 
 import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -29,29 +24,28 @@ import com.google.android.things.pio.Gpio;
 import com.google.android.things.pio.PeripheralManagerService;
 
 import java.io.IOException;
-import java.util.List;
 
-/**
- * Skeleton of the main Android Things activity. Implement your device's logic
- * in this class.
- * <p>
- * Android Things peripheral APIs are accessible through the class
- * PeripheralManagerService. For example, the snippet below will open a GPIO pin and
- * set it to HIGH:
- * <p>
- * <pre>{@code
- * PeripheralManagerService service = new PeripheralManagerService();
- * mLedGpio = service.openGpio("BCM6");
- * mLedGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
- * mLedGpio.setValue(true);
- * }</pre>
- * <p>
- * For more complex peripherals, look for an existing user-space driver, or implement one if none
- * is available.
- */
 public class MainActivity extends Activity {
-    private static final String TAG = me.dawars.christmas2016.MainActivity.class.getSimpleName();
-    private Gpio mLedGpio;
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private Gpio[] mLedGpios = new Gpio[15];
+    private NetworkThread thread;
+    private static final String[] gpioNames = new String[]{
+            "BCM27",
+            "BCM17",
+            "BCM5",
+            "BCM6",
+            "BCM13",
+            "BCM19",
+            "BCM26",
+            "BCM21",
+            "BCM20",
+            "BCM16",
+            "BCM12",
+            "BCM25",
+            "BCM4",
+            "BCM23",
+            "BCM18",
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,27 +53,16 @@ public class MainActivity extends Activity {
         Log.d(TAG, "onCreate");
 
         PeripheralManagerService manager = new PeripheralManagerService();
-        List<String> portList = manager.getGpioList();
-        if (portList.isEmpty()) {
-            Log.i(TAG, "No GPIO port available on this device.");
-        } else {
-            Log.i(TAG, "List of available ports: " + portList);
-        }
-        List<String> pwmList = manager.getPwmList();
-        if (pwmList.isEmpty()) {
-            Log.i(TAG, "No PWM port available on this device.");
-        } else {
-            Log.i(TAG, "List of available ports: " + pwmList);
-        }
-
         try {
-            mLedGpio = manager.openGpio("BCM6");
-            mLedGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+            for (int i = 0; i < mLedGpios.length; i++) {
+                mLedGpios[i] = manager.openGpio(gpioNames[i]);
+                mLedGpios[i].setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        NetworkThread thread = new NetworkThread(manager, mLedGpio);
+        thread = new NetworkThread(manager, mLedGpios);
         thread.start();
     }
 
@@ -89,9 +72,21 @@ public class MainActivity extends Activity {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
         try {
-            mLedGpio.setValue(false);
-            mLedGpio.close();
+            if (mLedGpios != null) {
+                for (Gpio gpio :
+                        mLedGpios) {
+                    gpio.setValue(false);
+                    gpio.close();
+                }
+            }
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            thread.join();
+            thread = null;
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
