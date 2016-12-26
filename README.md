@@ -4,6 +4,11 @@ Christmas 2016
 A Christmas project inspired by http://ipv6tree.bitnet.be/
 
 The goal was to get to know with Android Things and put together something simple but fun and interactive.
+![Demo](images/xmas_led.jpg?raw=true "Demo")
+
+The individual LEDs can be toggled remotely by sending UDP packets to dawars.no-ip.org:1234
+
+Example: 'on 5' - turns the 6th LED on
 
 Pre-requisites
 --------------
